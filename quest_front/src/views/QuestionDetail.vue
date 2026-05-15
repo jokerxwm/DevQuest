@@ -9,6 +9,14 @@
             <span>发布时间：{{ formatTime(question.createdAt) }}</span>
             <span>浏览：{{ question.viewCount || 0 }}次</span>
           </div>
+          <div class="question-actions" v-if="userStore.isLoggedIn()">
+            <el-button v-if="isAuthor" text type="primary" @click="router.push(`/questions/${question.id}/edit`)">
+              <el-icon><Edit /></el-icon> 编辑
+            </el-button>
+            <el-button text :type="isFavorited ? 'warning' : 'default'" @click="handleFavorite">
+              <el-icon><Star /></el-icon> {{ isFavorited ? '已收藏' : '收藏' }}
+            </el-button>
+          </div>
           <div class="question-body">
             <div class="vote-section">
               <el-button :icon="ArrowUp" circle @click="handleVote('question', question.id, 1)" :type="userVote === 1 ? 'primary' : ''" />
@@ -77,10 +85,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowUp, ArrowDown, Check } from '@element-plus/icons-vue'
+import { ArrowUp, ArrowDown, Check, Edit, Star } from '@element-plus/icons-vue'
 import { getQuestionDetail } from '@/api/question'
 import { getAnswers, createAnswer, acceptAnswer } from '@/api/answer'
 import { vote, getUserVote } from '@/api/vote'
+import { addFavorite, removeFavorite, isFavorited as checkFavorited } from '@/api/favorite'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 
@@ -94,6 +103,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const answerContent = ref('')
 const userVote = ref(0)
+const isFavorited = ref(false)
 
 const isAuthor = computed(() => {
   return userStore.user?.id === question.value.authorId
@@ -112,11 +122,37 @@ const fetchQuestion = async () => {
     question.value = res.data
     if (userStore.isLoggedIn()) {
       fetchUserVote('question', question.value.id)
+      checkFavoriteStatus()
     }
   } catch (error) {
     console.error('获取问题详情失败:', error)
   } finally {
     loading.value = false
+  }
+}
+
+const checkFavoriteStatus = async () => {
+  try {
+    const res = await checkFavorited(route.params.id)
+    isFavorited.value = res.data || false
+  } catch (error) {
+    console.error('检查收藏状态失败:', error)
+  }
+}
+
+const handleFavorite = async () => {
+  try {
+    if (isFavorited.value) {
+      await removeFavorite(route.params.id)
+      isFavorited.value = false
+      ElMessage.success('已取消收藏')
+    } else {
+      await addFavorite(route.params.id)
+      isFavorited.value = true
+      ElMessage.success('收藏成功')
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
   }
 }
 
@@ -225,8 +261,16 @@ onMounted(() => {
   gap: 16px;
   font-size: 13px;
   color: #999;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.question-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #eee;
 }
 

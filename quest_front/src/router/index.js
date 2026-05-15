@@ -21,15 +21,48 @@ const routes = [
         component: () => import('@/views/QuestionDetail.vue')
       },
       {
+        path: 'questions/:id/edit',
+        name: 'EditQuestion',
+        component: () => import('@/views/EditQuestion.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'ask',
         name: 'AskQuestion',
         component: () => import('@/views/AskQuestion.vue'),
         meta: { requiresAuth: true }
       },
       {
+        path: 'tags',
+        name: 'Tags',
+        component: () => import('@/views/Tags.vue')
+      },
+      {
+        path: 'tags/:id',
+        name: 'TagQuestions',
+        component: () => import('@/views/TagQuestions.vue')
+      },
+      {
+        path: 'search',
+        name: 'SearchResults',
+        component: () => import('@/views/SearchResults.vue')
+      },
+      {
         path: 'user/:id',
         name: 'UserProfile',
         component: () => import('@/views/UserProfile.vue')
+      },
+      {
+        path: 'settings',
+        name: 'UserSettings',
+        component: () => import('@/views/UserSettings.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'favorites',
+        name: 'Favorites',
+        component: () => import('@/views/Favorites.vue'),
+        meta: { requiresAuth: true }
       },
       {
         path: 'ai',

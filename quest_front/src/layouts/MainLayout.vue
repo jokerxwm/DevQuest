@@ -9,8 +9,18 @@
         <nav class="nav">
           <router-link to="/" class="nav-item">首页</router-link>
           <router-link to="/questions" class="nav-item">问答</router-link>
+          <router-link to="/tags" class="nav-item">标签</router-link>
           <router-link v-if="userStore.isLoggedIn()" to="/ai" class="nav-item">AI助手</router-link>
         </nav>
+        <div class="search-bar">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索问题..."
+            :prefix-icon="Search"
+            clearable
+            @keydown.enter="handleSearch"
+          />
+        </div>
         <div class="header-right">
           <template v-if="userStore.isLoggedIn()">
             <el-button type="primary" @click="router.push('/ask')">提问</el-button>
@@ -26,6 +36,8 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="router.push(`/user/${userStore.user?.id}`)">个人主页</el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/settings')">设置</el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -47,19 +59,41 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell } from '@element-plus/icons-vue'
+import { Bell, Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
 
 const router = useRouter()
 const userStore = useUserStore()
 const unreadCount = ref(0)
+const searchKeyword = ref('')
+
+const handleSearch = () => {
+  if (searchKeyword.value.trim()) {
+    router.push({ path: '/search', query: { q: searchKeyword.value.trim() } })
+  }
+}
+
+const fetchUnreadCount = async () => {
+  if (!userStore.isLoggedIn()) return
+  try {
+    const res = await request.get('/notifications/unread-count')
+    unreadCount.value = res.data || 0
+  } catch (error) {
+    console.error('获取未读通知数失败:', error)
+  }
+}
 
 const handleLogout = async () => {
   await userStore.logout()
   ElMessage.success('已退出登录')
   router.push('/')
 }
+
+onMounted(() => {
+  fetchUnreadCount()
+})
 </script>
 
 <style scoped>
@@ -85,7 +119,7 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   cursor: pointer;
-  margin-right: 40px;
+  margin-right: 24px;
 }
 
 .logo-icon {
@@ -103,22 +137,29 @@ const handleLogout = async () => {
 
 .nav {
   display: flex;
-  gap: 24px;
+  gap: 20px;
 }
 
 .nav-item {
-  font-size: 16px;
+  font-size: 15px;
   color: #666;
   cursor: pointer;
   padding: 8px 0;
   border-bottom: 2px solid transparent;
   transition: all 0.3s;
+  white-space: nowrap;
 }
 
 .nav-item:hover,
 .nav-item.router-link-active {
   color: #1e80ff;
   border-bottom-color: #1e80ff;
+}
+
+.search-bar {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 24px;
 }
 
 .header-right {

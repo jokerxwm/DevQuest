@@ -26,6 +26,11 @@
           </div>
         </div>
 
+        <div class="action-buttons" v-if="userStore.isLoggedIn() && userStore.user?.id != route.params.id">
+          <el-button v-if="!isFollowing" type="primary" @click="handleFollow">关注</el-button>
+          <el-button v-else @click="handleUnfollow">已关注</el-button>
+        </div>
+
         <div class="tabs">
           <el-tabs v-model="activeTab" @tab-change="handleTabChange">
             <el-tab-pane label="提问" name="questions">
@@ -52,6 +57,30 @@
                 <el-empty v-if="!loading.answers && answers.length === 0" description="暂无回答" />
               </div>
             </el-tab-pane>
+            <el-tab-pane label="关注者" name="followers">
+              <div v-loading="loading.followers">
+                <div v-for="f in followers" :key="f.id" class="user-item card" @click="router.push(`/user/${f.id}`)">
+                  <el-avatar :size="40">{{ f.nickname?.charAt(0) }}</el-avatar>
+                  <div class="user-info">
+                    <span class="user-name">{{ f.nickname }}</span>
+                    <span class="user-bio">{{ f.bio || '这个人很懒，什么都没写~' }}</span>
+                  </div>
+                </div>
+                <el-empty v-if="!loading.followers && followers.length === 0" description="暂无关注者" />
+              </div>
+            </el-tab-pane>
+            <el-tab-pane label="关注" name="following">
+              <div v-loading="loading.following">
+                <div v-for="f in following" :key="f.id" class="user-item card" @click="router.push(`/user/${f.id}`)">
+                  <el-avatar :size="40">{{ f.nickname?.charAt(0) }}</el-avatar>
+                  <div class="user-info">
+                    <span class="user-name">{{ f.nickname }}</span>
+                    <span class="user-bio">{{ f.bio || '这个人很懒，什么都没写~' }}</span>
+                  </div>
+                </div>
+                <el-empty v-if="!loading.following && following.length === 0" description="暂无关注" />
+              </div>
+            </el-tab-pane>
           </el-tabs>
         </div>
       </div>
@@ -76,20 +105,28 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getUserInfo, getUserStats } from '@/api/user'
+import { getUserInfo, getUserStats, getUserAnswers, getFollowers, getFollowing, followUser, unfollowUser } from '@/api/user'
 import { getUserQuestions } from '@/api/question'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const userInfo = ref({})
 const stats = ref({})
 const questions = ref([])
 const answers = ref([])
+const followers = ref([])
+const following = ref([])
+const isFollowing = ref(false)
 const activeTab = ref('questions')
 const loading = reactive({
   questions: false,
-  answers: false
+  answers: false,
+  followers: false,
+  following: false
 })
 
 const formatTime = (time) => {
@@ -128,9 +165,73 @@ const fetchUserQuestions = async () => {
   }
 }
 
+const fetchUserAnswers = async () => {
+  loading.answers = true
+  try {
+    const res = await getUserAnswers(route.params.id, { page: 1, size: 20 })
+    answers.value = res.data.list || []
+  } catch (error) {
+    console.error('获取用户回答失败:', error)
+  } finally {
+    loading.answers = false
+  }
+}
+
+const fetchFollowers = async () => {
+  loading.followers = true
+  try {
+    const res = await getFollowers(route.params.id, { page: 1, size: 20 })
+    followers.value = res.data.list || []
+  } catch (error) {
+    console.error('获取关注者失败:', error)
+  } finally {
+    loading.followers = false
+  }
+}
+
+const fetchFollowing = async () => {
+  loading.following = true
+  try {
+    const res = await getFollowing(route.params.id, { page: 1, size: 20 })
+    following.value = res.data.list || []
+  } catch (error) {
+    console.error('获取关注列表失败:', error)
+  } finally {
+    loading.following = false
+  }
+}
+
+const handleFollow = async () => {
+  try {
+    await followUser(route.params.id)
+    isFollowing.value = true
+    stats.value.followers = (stats.value.followers || 0) + 1
+    ElMessage.success('关注成功')
+  } catch (error) {
+    console.error('关注失败:', error)
+  }
+}
+
+const handleUnfollow = async () => {
+  try {
+    await unfollowUser(route.params.id)
+    isFollowing.value = false
+    stats.value.followers = Math.max((stats.value.followers || 1) - 1, 0)
+    ElMessage.success('已取消关注')
+  } catch (error) {
+    console.error('取消关注失败:', error)
+  }
+}
+
 const handleTabChange = (tab) => {
   if (tab === 'questions') {
     fetchUserQuestions()
+  } else if (tab === 'answers') {
+    fetchUserAnswers()
+  } else if (tab === 'followers') {
+    fetchFollowers()
+  } else if (tab === 'following') {
+    fetchFollowing()
   }
 }
 
@@ -169,6 +270,10 @@ onMounted(() => {
 
 .profile-card {
   margin-bottom: 24px;
+}
+
+.action-buttons {
+  margin-bottom: 16px;
 }
 
 .profile-header {
@@ -241,6 +346,35 @@ onMounted(() => {
   color: #999;
   display: flex;
   gap: 16px;
+}
+
+.user-item {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+}
+
+.user-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.user-bio {
+  font-size: 13px;
+  color: #999;
 }
 
 .sidebar-card {
