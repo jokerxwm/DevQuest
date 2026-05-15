@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: devquest-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://devquest-user-service
+          predicates:
+            - Path=/api/auth/**,/api/users/**
+        - id: question-service
+          uri: lb://devquest-question-service
+          predicates:
+            - Path=/api/questions/**,/api/answers/**,/api/comments/**,/api/votes/**,/api/favorites/**,/api/tags/**
+        - id: ai-service
+          uri: lb://devquest-ai-service
+          predicates:
+            - Path=/api/ai/**
+        - id: search-service
+          uri: lb://devquest-search-service
+          predicates:
+            - Path=/api/search/**
+        - id: notification-service
+          uri: lb://devquest-notification-service
+          predicates:
+            - Path=/api/notifications/**
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+
+sa-token:
+  token-name: Authorization
+  timeout: 86400
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
