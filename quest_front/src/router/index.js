@@ -27,10 +27,21 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'questions/:id/answer',
+        name: 'AnswerEditor',
+        component: () => import('@/views/AnswerEditor.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'ask',
         name: 'AskQuestion',
         component: () => import('@/views/AskQuestion.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'hot',
+        name: 'HotQuestions',
+        component: () => import('@/views/HotQuestions.vue')
       },
       {
         path: 'tags',
@@ -65,10 +76,39 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'drafts',
+        name: 'Drafts',
+        component: () => import('@/views/Drafts.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'messages',
+        name: 'MessageList',
+        component: () => import('@/views/MessageList.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'messages/new',
+        name: 'NewMessage',
+        component: () => import('@/views/NewMessage.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'messages/:userId',
+        name: 'MessageConversation',
+        component: () => import('@/views/MessageConversation.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: 'ai',
         name: 'AiChat',
         component: () => import('@/views/AiChat.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'ai/daily',
+        name: 'AiDaily',
+        component: () => import('@/views/AiDaily.vue')
       },
       {
         path: 'notifications',
@@ -87,6 +127,11 @@ const routes = [
     path: '/register',
     name: 'Register',
     component: () => import('@/views/Register.vue')
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFound.vue')
   }
 ]
 

@@ -9,6 +9,7 @@
         <nav class="nav">
           <router-link to="/" class="nav-item">首页</router-link>
           <router-link to="/questions" class="nav-item">问答</router-link>
+          <router-link to="/hot" class="nav-item">热榜</router-link>
           <router-link to="/tags" class="nav-item">标签</router-link>
           <router-link v-if="userStore.isLoggedIn()" to="/ai" class="nav-item">AI助手</router-link>
         </nav>
@@ -37,6 +38,8 @@
                 <el-dropdown-menu>
                   <el-dropdown-item @click="router.push(`/user/${userStore.user?.id}`)">个人主页</el-dropdown-item>
                   <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/drafts')">我的草稿</el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/messages')">私信</el-dropdown-item>
                   <el-dropdown-item @click="router.push('/settings')">设置</el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
@@ -53,6 +56,23 @@
     <main class="main">
       <router-view />
     </main>
+    <footer class="footer">
+      <div class="container footer-content">
+        <div class="footer-left">
+          <span class="footer-logo">DevQuest</span>
+          <span class="footer-desc">开发者技术问答社区</span>
+        </div>
+        <div class="footer-links">
+          <router-link to="/">首页</router-link>
+          <router-link to="/questions">问答</router-link>
+          <router-link to="/tags">标签</router-link>
+          <router-link to="/ai/daily">AI快讯</router-link>
+        </div>
+        <div class="footer-right">
+          <p>© 2024 DevQuest. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -99,6 +119,8 @@ onMounted(() => {
 <style scoped>
 .layout {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -179,5 +201,56 @@ onMounted(() => {
 
 .main {
   padding: 24px 0;
+  min-height: calc(100vh - 60px - 120px);
+}
+
+.footer {
+  background: #2c3e50;
+  color: #bdc3c7;
+  padding: 32px 0;
+  margin-top: auto;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-logo {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.footer-desc {
+  font-size: 13px;
+  color: #95a5a6;
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-links a {
+  color: #bdc3c7;
+  font-size: 14px;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover {
+  color: #fff;
+}
+
+.footer-right p {
+  font-size: 13px;
+  color: #7f8c8d;
 }
 </style>

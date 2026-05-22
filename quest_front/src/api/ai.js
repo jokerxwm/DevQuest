@@ -11,3 +11,15 @@ export function getHistory() {
 export function getConversation(conversationId) {
   return request.get(`/ai/conversation/${conversationId}`)
 }
+
+export function getDailyList(params) {
+  return request.get('/ai/daily', { params })
+}
+
+export function getDailyDetail(dailyId) {
+  return request.get(`/ai/daily/${dailyId}`)
+}
+
+export function polishText(data) {
+  return request.post('/ai/polish', data)
+}

@@ -16,6 +16,12 @@
             <el-button text :type="isFavorited ? 'warning' : 'default'" @click="handleFavorite">
               <el-icon><Star /></el-icon> {{ isFavorited ? '已收藏' : '收藏' }}
             </el-button>
+            <el-button text @click="showShare = true">
+              <el-icon><Share /></el-icon> 分享
+            </el-button>
+            <el-button text type="danger" @click="showReport = true">
+              <el-icon><WarningFilled /></el-icon> 举报
+            </el-button>
           </div>
           <div class="question-body">
             <div class="vote-section">
@@ -55,7 +61,12 @@
         </div>
 
         <div v-if="userStore.isLoggedIn()" class="answer-form card">
-          <h3>撰写回答</h3>
+          <div class="answer-form-header">
+            <h3>撰写回答</h3>
+            <el-button type="primary" plain @click="router.push(`/questions/${route.params.id}/answer`)">
+              全屏编辑
+            </el-button>
+          </div>
           <el-input v-model="answerContent" type="textarea" :rows="6" placeholder="请输入你的回答..." />
           <el-button type="primary" :loading="submitting" @click="submitAnswer" style="margin-top: 16px">提交回答</el-button>
         </div>
@@ -79,14 +90,19 @@
         </div>
       </div>
     </div>
+
+    <ShareCard v-model="showShare" :title="question.title" :description="question.content" :question-id="question.id" />
+    <ReportDialog v-model="showReport" target-type="question" :target-id="question.id" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowUp, ArrowDown, Check, Edit, Star } from '@element-plus/icons-vue'
+import { ArrowUp, ArrowDown, Check, Edit, Star, Share, WarningFilled } from '@element-plus/icons-vue'
 import { getQuestionDetail } from '@/api/question'
+import ShareCard from '@/components/ShareCard.vue'
+import ReportDialog from '@/components/ReportDialog.vue'
 import { getAnswers, createAnswer, acceptAnswer } from '@/api/answer'
 import { vote, getUserVote } from '@/api/vote'
 import { addFavorite, removeFavorite, isFavorited as checkFavorited } from '@/api/favorite'
@@ -104,6 +120,8 @@ const submitting = ref(false)
 const answerContent = ref('')
 const userVote = ref(0)
 const isFavorited = ref(false)
+const showShare = ref(false)
+const showReport = ref(false)
 
 const isAuthor = computed(() => {
   return userStore.user?.id === question.value.authorId
@@ -351,6 +369,17 @@ onMounted(() => {
 .answer-form h3 {
   font-size: 18px;
   margin-bottom: 16px;
+}
+
+.answer-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.answer-form-header h3 {
+  margin-bottom: 0;
 }
 
 .sidebar-card {
