@@ -32,10 +32,21 @@ public class AuthFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
+        String token = exchange.getRequest().getHeaders().getFirst("Authorization");
+        if (token == null || token.isEmpty()) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+
         try {
-            StpUtil.checkLogin();
+            Object loginId = StpUtil.getLoginIdByToken(token);
+            if (loginId == null) {
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
+            }
+
             ServerHttpRequest request = exchange.getRequest().mutate()
-                    .header("X-User-Id", String.valueOf(StpUtil.getLoginIdAsLong()))
+                    .header("X-User-Id", String.valueOf(loginId))
                     .build();
             return chain.filter(exchange.mutate().request(request).build());
         } catch (Exception e) {
