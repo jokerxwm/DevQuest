@@ -1,271 +1,102 @@
 <template>
-  <div class="answer-editor container">
-    <div class="editor-header card">
-      <div class="question-info">
-        <h2>撰写回答</h2>
-        <p class="question-title" @click="router.push(`/questions/${route.params.id}`)">
-          问题：{{ question.title }}
-        </p>
+  <div class="ae-page">
+    <section class="ae-hero">
+      <div class="ae-hero-inner">
+        <span class="section-eyebrow">Write Answer</span>
+        <h1 class="ae-title">撰写回答</h1>
       </div>
-    </div>
+    </section>
 
-    <div class="editor-container">
-      <div class="editor-main card">
-        <div class="editor-toolbar">
-          <el-radio-group v-model="editorMode" size="small">
-            <el-radio-button label="edit">编辑</el-radio-button>
-            <el-radio-button label="preview">预览</el-radio-button>
-          </el-radio-group>
-          <el-button size="small" type="primary" plain @click="showAiPolish = true">
-            AI 润色
-          </el-button>
-        </div>
-
-        <div v-if="editorMode === 'edit'">
-          <el-input
-            v-model="content"
-            type="textarea"
-            :rows="18"
-            placeholder="请使用 Markdown 格式撰写你的回答..."
-          />
-        </div>
-        <div v-else class="preview-area">
-          <div class="markdown-preview">{{ content || '暂无内容' }}</div>
-        </div>
-
-        <div class="editor-footer">
-          <el-button @click="router.back()">取消</el-button>
-          <el-button @click="handleSaveDraft">保存草稿</el-button>
-          <el-button type="primary" :loading="submitting" @click="handleSubmit">提交回答</el-button>
-        </div>
-      </div>
-
-      <div class="editor-sidebar">
-        <div class="card sidebar-card">
-          <h3>回答提示</h3>
-          <ul class="tips-list">
-            <li>请确保回答与问题相关</li>
-            <li>提供详细的代码示例</li>
-            <li>解释你的解决方案思路</li>
-            <li>支持 Markdown 语法</li>
-          </ul>
-        </div>
-
-        <div class="card sidebar-card">
-          <h3>问题详情</h3>
-          <div class="info-item">
-            <span class="label">回答数</span>
-            <span class="value">{{ question.answerCount || 0 }}</span>
+    <section class="ae-body">
+      <div class="ae-container">
+        <div class="ae-grid">
+          <div class="ae-main">
+            <div class="card-lux">
+              <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+                <div class="form-group">
+                  <label class="form-label">回答内容</label>
+                  <el-input v-model="form.content" type="textarea" :rows="15" placeholder="分享你的知识和经验，帮助提问者解决问题..." />
+                  <span class="form-hint">至少 10 个字符，提供详细的解决方案和代码示例</span>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn-primary" :disabled="loading" @click="handleSubmit">{{ loading ? '提交中...' : '提交回答' }}</button>
+                  <button type="button" class="btn-outline" @click="router.back()">取消</button>
+                </div>
+              </el-form>
+            </div>
           </div>
-          <div class="info-item">
-            <span class="label">浏览数</span>
-            <span class="value">{{ question.viewCount || 0 }}</span>
-          </div>
+
+          <aside class="ae-side">
+            <div class="card-lux side-card">
+              <h3 class="side-title">回答技巧</h3>
+              <div class="side-divider"></div>
+              <div class="tip-list">
+                <div class="tip-item"><div class="tip-dot"></div><span>提供完整的解决方案，而不仅仅是提示</span></div>
+                <div class="tip-item"><div class="tip-dot"></div><span>使用代码块格式化代码</span></div>
+                <div class="tip-item"><div class="tip-dot"></div><span>解释你的思路和原理</span></div>
+                <div class="tip-item"><div class="tip-dot"></div><span>测试你的代码确保可行</span></div>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
-    </div>
-
-    <el-dialog v-model="showAiPolish" title="AI 润色" width="700px" destroy-on-close>
-      <AiPolish :original="content" @replace="handleAiReplace" @close="showAiPolish = false" />
-    </el-dialog>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getQuestionDetail } from '@/api/question'
 import { createAnswer } from '@/api/answer'
-import { saveDraft, getDraftDetail, updateDraft } from '@/api/draft'
-import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
-import AiPolish from '@/components/AiPolish.vue'
 
 const route = useRoute()
 const router = useRouter()
-const userStore = useUserStore()
-
+const formRef = ref()
+const loading = ref(false)
 const question = ref({})
-const content = ref('')
-const editorMode = ref('edit')
-const submitting = ref(false)
-const showAiPolish = ref(false)
-const draftId = ref(null)
+const form = reactive({ content: '' })
+const rules = { content: [{ required: true, message: '请输入回答内容', trigger: 'blur' }, { min: 10, message: '回答内容至少10个字符', trigger: 'blur' }] }
 
-const fetchQuestion = async () => {
-  try {
-    const res = await getQuestionDetail(route.params.id)
-    question.value = res.data
-  } catch (error) {
-    console.error('获取问题详情失败:', error)
-  }
-}
-
-const fetchDraft = async () => {
-  if (route.query.draftId) {
-    try {
-      const res = await getDraftDetail(route.query.draftId)
-      content.value = res.data.content || ''
-      draftId.value = route.query.draftId
-    } catch (error) {
-      console.error('获取草稿失败:', error)
-    }
-  }
-}
-
-const handleSaveDraft = async () => {
-  if (!content.value.trim()) {
-    ElMessage.warning('请输入回答内容')
-    return
-  }
-  try {
-    const data = {
-      type: 'answer',
-      questionId: Number(route.params.id),
-      content: content.value,
-      questionTitle: question.value.title
-    }
-    if (draftId.value) {
-      await updateDraft(draftId.value, data)
-    } else {
-      const res = await saveDraft(data)
-      draftId.value = res.data?.id
-    }
-    ElMessage.success('草稿已保存')
-  } catch (error) {
-    console.error('保存草稿失败:', error)
-  }
-}
-
-const handleAiReplace = (text) => {
-  content.value = text
-  showAiPolish.value = false
-}
+const fetchQuestion = async () => { try { const res = await getQuestionDetail(route.params.id); question.value = res.data } catch (e) { console.error(e) } }
 
 const handleSubmit = async () => {
-  if (!content.value.trim()) {
-    ElMessage.warning('请输入回答内容')
-    return
-  }
-  submitting.value = true
-  try {
-    await createAnswer(route.params.id, { content: content.value })
-    ElMessage.success('回答提交成功')
-    router.push(`/questions/${route.params.id}`)
-  } catch (error) {
-    console.error('提交回答失败:', error)
-  } finally {
-    submitting.value = false
-  }
+  await formRef.value.validate(); loading.value = true
+  try { await createAnswer(route.params.id, form); ElMessage.success('回答提交成功'); router.push(`/questions/${route.params.id}`) }
+  catch (e) { console.error(e) }
+  finally { loading.value = false }
 }
 
-onMounted(() => {
-  fetchQuestion()
-  fetchDraft()
-})
+onMounted(() => { fetchQuestion() })
 </script>
 
 <style scoped>
-.answer-editor {
-  padding: 24px 0;
-}
-
-.editor-header {
-  margin-bottom: 16px;
-}
-
-.editor-header h2 {
-  font-size: 20px;
-  margin-bottom: 8px;
-}
-
-.question-title {
-  color: #1e80ff;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.question-title:hover {
-  text-decoration: underline;
-}
-
-.editor-container {
-  display: flex;
-  gap: 24px;
-}
-
-.editor-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.editor-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
-}
-
-.preview-area {
-  min-height: 400px;
-  padding: 16px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-}
-
-.markdown-preview {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #333;
-  white-space: pre-wrap;
-}
-
-.editor-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
-}
-
-.editor-sidebar {
-  width: 280px;
-  flex-shrink: 0;
-}
-
-.sidebar-card {
-  margin-bottom: 16px;
-}
-
-.sidebar-card h3 {
-  font-size: 16px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
-}
-
-.tips-list {
-  padding-left: 16px;
-  color: #666;
-  font-size: 14px;
-  line-height: 2;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  font-size: 14px;
-}
-
-.label {
-  color: #999;
-}
-
-.value {
-  color: #333;
-}
+.ae-page { overflow: hidden; }
+.ae-hero { background: var(--cream); padding: 100px 0 40px; text-align: center; border-bottom: 1px solid var(--border-light); }
+.ae-hero-inner { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+.section-eyebrow { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--caramel); font-weight: 500; margin-bottom: 8px; }
+.ae-title { font-family: 'Noto Serif SC', serif; font-size: 2rem; font-weight: 400; color: var(--forest); }
+.ae-body { padding: 48px 0 100px; }
+.ae-container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+.ae-grid { display: flex; gap: 36px; }
+.ae-main { flex: 1; min-width: 0; }
+.ae-side { width: 300px; flex-shrink: 0; }
+.card-lux { background: #fff; border: 1px solid var(--forest-08); border-radius: 20px; padding: 32px; }
+.form-group { margin-bottom: 24px; }
+.form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--forest); margin-bottom: 8px; }
+.form-hint { display: block; font-size: 0.75rem; color: var(--forest-40); margin-top: 6px; }
+.form-actions { display: flex; gap: 12px; }
+.btn-primary { background: var(--caramel); color: #fff; border: none; padding: 14px 32px; border-radius: 999px; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.3s; }
+.btn-primary:hover { background: var(--caramel-light); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-outline { background: transparent; color: var(--forest); border: 1.5px solid var(--forest-20); padding: 14px 28px; border-radius: 999px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+.btn-outline:hover { border-color: var(--caramel); color: var(--caramel); }
+.side-card { position: sticky; top: 100px; }
+.side-title { font-family: 'Noto Serif SC', serif; font-size: 1.1rem; font-weight: 500; color: var(--forest); }
+.side-divider { width: 32px; height: 1.5px; background: var(--caramel); margin: 12px 0 18px; }
+.tip-list { display: flex; flex-direction: column; gap: 14px; }
+.tip-item { display: flex; align-items: flex-start; gap: 10px; font-size: 0.82rem; color: var(--forest-70); line-height: 1.5; }
+.tip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--caramel); flex-shrink: 0; margin-top: 6px; }
+@media (max-width: 1024px) { .ae-grid { flex-direction: column; } .ae-side { width: 100%; } .side-card { position: static; } }
 </style>

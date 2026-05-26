@@ -1,217 +1,110 @@
 <template>
-  <div class="ai-daily container">
-    <div class="content-wrapper">
-      <div class="main-content">
-        <div class="daily-header card">
-          <h2>AI 每日快讯</h2>
-          <p class="subtitle">由 AI 为你精选的技术热点与社区动态</p>
+  <div class="daily-page">
+    <section class="daily-hero">
+      <div class="daily-hero-inner">
+        <span class="section-eyebrow">AI Daily</span>
+        <div class="dh-row">
+          <div>
+            <h1 class="daily-title">AI 日报</h1>
+            <p class="daily-desc">AI 生成的技术热点日报，每天更新</p>
+          </div>
+          <button class="btn-caramel" :disabled="generating" @click="generateDaily">
+            {{ generating ? '生成中...' : '生成今日日报' }}
+          </button>
         </div>
+      </div>
+    </section>
 
-        <div v-loading="loading">
-          <div v-for="(daily, index) in dailyList" :key="daily.id" class="daily-card card">
-            <div class="daily-date">
-              <span class="date-day">{{ formatDay(daily.date) }}</span>
-              <span class="date-month">{{ formatMonth(daily.date) }}</span>
+    <section class="daily-body">
+      <div class="daily-container">
+        <div v-loading="loading" class="daily-list">
+          <div v-for="daily in dailies" :key="daily.id" class="daily-card">
+            <div class="dc-date">
+              <span class="dc-day">{{ new Date(daily.createdAt).getDate() }}</span>
+              <span class="dc-month">{{ new Date(daily.createdAt).toLocaleString('default', { month: 'short' }) }}</span>
             </div>
-            <div class="daily-content">
-              <h3 class="daily-title">{{ daily.title }}</h3>
-              <div class="daily-body">{{ daily.content }}</div>
-              <div class="daily-tags">
-                <el-tag v-for="tag in daily.tags" :key="tag" size="small" type="info">{{ tag }}</el-tag>
-              </div>
-              <div class="daily-footer">
-                <span class="daily-time">{{ formatTime(daily.createdAt) }}</span>
-                <div class="daily-actions">
-                  <el-button text size="small" @click="handleShare(daily)">
-                    <el-icon><Share /></el-icon> 分享
-                  </el-button>
-                </div>
+            <div class="dc-body">
+              <h3 class="dc-title">{{ daily.title }}</h3>
+              <p class="dc-content">{{ daily.content }}</p>
+              <div class="dc-tags" v-if="daily.tags">
+                <span v-for="tag in daily.tags" :key="tag" class="dc-tag">{{ tag }}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <el-empty v-if="!loading && dailyList.length === 0" description="暂无快讯" />
-      </div>
+        <div v-if="!loading && dailies.length === 0" class="empty-box">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <p>暂无日报</p>
+          <button class="btn-caramel" @click="generateDaily">生成第一份日报</button>
+        </div>
 
-      <div class="sidebar">
-        <div class="card sidebar-card">
-          <h3>AI 快讯</h3>
-          <p class="tip-text">每日快讯由 AI 自动分析社区热门问题和技术趋势生成，帮助你快速了解技术动态。</p>
+        <div v-if="total > 0" class="pagination">
+          <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="prev, pager, next" @current-change="fetchDailies" />
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Share } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 
-const dailyList = ref([])
+const dailies = ref([])
 const loading = ref(false)
+const generating = ref(false)
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
-const formatDay = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).getDate()
-}
-
-const formatMonth = (dateStr) => {
-  if (!dateStr) return ''
-  const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
-  return months[new Date(dateStr).getMonth()]
-}
-
-const formatTime = (time) => {
-  if (!time) return ''
-  return new Date(time).toLocaleDateString()
-}
-
-const fetchDailyList = async () => {
+const fetchDailies = async () => {
   loading.value = true
-  try {
-    const res = await request.get('/ai/daily', { params: { page: 1, size: 20 } })
-    dailyList.value = res.data.list || []
-  } catch (error) {
-    console.error('获取AI快讯失败:', error)
-  } finally {
-    loading.value = false
-  }
+  try { const res = await request.get('/ai/daily', { params: { page: page.value, size: pageSize.value } }); dailies.value = res.data.list || []; total.value = res.data.total || 0 }
+  catch (e) { console.error(e) }
+  finally { loading.value = false }
 }
 
-const handleShare = (daily) => {
-  const text = `${daily.title}\n${daily.content?.substring(0, 200)}...`
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text)
-    ElMessage.success('已复制到剪贴板')
-  }
+const generateDaily = async () => {
+  generating.value = true
+  try { await request.post('/ai/daily/generate'); ElMessage.success('日报生成成功'); fetchDailies() }
+  catch (e) { console.error(e) }
+  finally { generating.value = false }
 }
 
-onMounted(() => {
-  fetchDailyList()
-})
+onMounted(() => { fetchDailies() })
 </script>
 
 <style scoped>
-.ai-daily {
-  padding: 24px 0;
-}
-
-.content-wrapper {
-  display: flex;
-  gap: 24px;
-}
-
-.main-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.sidebar {
-  width: 300px;
-  flex-shrink: 0;
-}
-
-.daily-header {
-  margin-bottom: 16px;
-}
-
-.daily-header h2 {
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
-.subtitle {
-  color: #666;
-  font-size: 14px;
-}
-
-.daily-card {
-  display: flex;
-  gap: 20px;
-  transition: box-shadow 0.3s;
-}
-
-.daily-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.daily-date {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 60px;
-  padding: 12px;
-  background: linear-gradient(135deg, #1e80ff, #36d399);
-  border-radius: 8px;
-  color: #fff;
-}
-
-.date-day {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.date-month {
-  font-size: 13px;
-  margin-top: 4px;
-}
-
-.daily-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.daily-title {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 12px;
-}
-
-.daily-body {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.8;
-  margin-bottom: 12px;
-}
-
-.daily-tags {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.daily-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.daily-time {
-  font-size: 12px;
-  color: #999;
-}
-
-.daily-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.sidebar-card h3 {
-  font-size: 16px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
-}
-
-.tip-text {
-  color: #666;
-  font-size: 14px;
-  line-height: 1.6;
-}
+.daily-page { overflow: hidden; }
+.daily-hero { background: var(--cream); padding: 100px 0 40px; border-bottom: 1px solid var(--border-light); }
+.daily-hero-inner { max-width: 900px; margin: 0 auto; padding: 0 2rem; }
+.section-eyebrow { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--caramel); font-weight: 500; margin-bottom: 8px; }
+.dh-row { display: flex; justify-content: space-between; align-items: flex-end; }
+.daily-title { font-family: 'Noto Serif SC', serif; font-size: 2rem; font-weight: 400; color: var(--forest); margin-bottom: 6px; }
+.daily-desc { font-size: 0.9rem; color: var(--forest-60); font-weight: 300; }
+.btn-caramel { background: var(--caramel); color: #fff; border: none; padding: 12px 28px; border-radius: 999px; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.3s; }
+.btn-caramel:hover { background: var(--caramel-light); }
+.btn-caramel:disabled { opacity: 0.6; cursor: not-allowed; }
+.daily-body { padding: 48px 0 100px; }
+.daily-container { max-width: 900px; margin: 0 auto; padding: 0 2rem; }
+.daily-list { display: flex; flex-direction: column; gap: 16px; }
+.daily-card { display: flex; gap: 24px; padding: 24px; background: #fff; border: 1px solid var(--forest-08); border-radius: 20px; transition: all 0.3s; }
+.daily-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(26,46,38,0.06); }
+.dc-date { display: flex; flex-direction: column; align-items: center; min-width: 50px; padding: 8px; background: var(--cream-dark); border-radius: 12px; }
+.dc-day { font-family: 'Noto Serif SC', serif; font-size: 1.5rem; font-weight: 500; color: var(--forest); line-height: 1; }
+.dc-month { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--forest-40); margin-top: 4px; }
+.dc-body { flex: 1; min-width: 0; }
+.dc-title { font-family: 'Noto Serif SC', serif; font-size: 1.1rem; font-weight: 500; color: var(--forest); margin-bottom: 8px; }
+.dc-content { font-size: 0.85rem; color: var(--forest-60); line-height: 1.8; margin-bottom: 12px; }
+.dc-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.dc-tag { display: inline-block; padding: 3px 12px; background: var(--cream); border-radius: 999px; font-size: 0.7rem; color: var(--forest-80); font-weight: 500; }
+.empty-box { text-align: center; padding: 60px 0; }
+.empty-icon { color: var(--forest-20); margin-bottom: 14px; }
+.empty-box p { font-size: 0.9rem; color: var(--forest-40); margin-bottom: 20px; }
+.pagination { margin-top: 32px; display: flex; justify-content: center; }
+@media (max-width: 640px) { .dh-row { flex-direction: column; gap: 16px; align-items: flex-start; } .daily-card { flex-direction: column; } }
 </style>
