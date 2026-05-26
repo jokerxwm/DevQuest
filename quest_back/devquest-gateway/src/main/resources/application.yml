@@ -22,7 +22,7 @@ spring:
         - id: question-service
           uri: lb://devquest-question-service
           predicates:
-            - Path=/api/questions/**,/api/answers/**,/api/comments/**,/api/votes/**,/api/favorites/**,/api/tags/**
+            - Path=/api/questions/**,/api/answers/**,/api/comments/**,/api/votes/**,/api/favorites/**,/api/tags/**,/api/drafts/**
         - id: ai-service
           uri: lb://devquest-ai-service
           predicates:
@@ -35,6 +35,10 @@ spring:
           uri: lb://devquest-notification-service
           predicates:
             - Path=/api/notifications/**
+        - id: admin-service
+          uri: lb://devquest-admin-service
+          predicates:
+            - Path=/api/admin/**
       globalcors:
         cors-configurations:
           '[/**]':
