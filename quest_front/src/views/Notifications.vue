@@ -7,7 +7,7 @@
       </div>
 
       <div v-loading="loading">
-        <div v-for="notification in notifications" :key="notification.id" class="notification-item" :class="{ unread: !notification.read }" @click="handleClick(notification)">
+        <div v-for="notification in notifications" :key="notification.id" class="notification-item" :class="{ unread: !notification.isRead }" @click="handleClick(notification)">
           <div class="notification-icon">
             <el-icon v-if="notification.type === 'answer'" :size="20"><ChatDotRound /></el-icon>
             <el-icon v-else-if="notification.type === 'vote'" :size="20"><Star /></el-icon>
@@ -65,7 +65,7 @@ const formatTime = (time) => {
 const fetchNotifications = async () => {
   loading.value = true
   try {
-    const res = await request.get('/notifications/list', {
+    const res = await request.get('/notifications', {
       params: { page: page.value, size: pageSize.value }
     })
     notifications.value = res.data.list || []
@@ -79,7 +79,7 @@ const fetchNotifications = async () => {
 
 const markAllRead = async () => {
   try {
-    await request.post('/notifications/read-all')
+    await request.put('/notifications/read-all')
     ElMessage.success('已全部标记为已读')
     fetchNotifications()
   } catch (error) {
@@ -88,15 +88,15 @@ const markAllRead = async () => {
 }
 
 const handleClick = async (notification) => {
-  if (!notification.read) {
+  if (!notification.isRead) {
     try {
-      await request.post(`/notifications/${notification.id}/read`)
+      await request.put(`/notifications/${notification.id}/read`)
     } catch (error) {
       console.error('标记已读失败:', error)
     }
   }
-  if (notification.questionId) {
-    router.push(`/questions/${notification.questionId}`)
+  if (notification.targetId) {
+    router.push(`/questions/${notification.targetId}`)
   }
 }
 
