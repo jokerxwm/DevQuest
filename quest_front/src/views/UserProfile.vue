@@ -157,7 +157,7 @@ const fetchUserQuestions = async () => {
   loading.questions = true
   try {
     const res = await getUserQuestions(route.params.id, { page: 1, size: 20 })
-    questions.value = res.data.list || []
+    questions.value = res.data.records || res.data.list || []
   } catch (error) {
     console.error('获取用户问题失败:', error)
   } finally {
@@ -169,7 +169,7 @@ const fetchUserAnswers = async () => {
   loading.answers = true
   try {
     const res = await getUserAnswers(route.params.id, { page: 1, size: 20 })
-    answers.value = res.data.list || []
+    answers.value = res.data.records || res.data.list || []
   } catch (error) {
     console.error('获取用户回答失败:', error)
   } finally {
