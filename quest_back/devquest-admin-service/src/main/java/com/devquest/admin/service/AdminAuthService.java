@@ -22,10 +22,10 @@ public class AdminAuthService {
         wrapper.eq(Admin::getUsername, username);
         Admin admin = adminMapper.selectOne(wrapper);
         if (admin == null || !admin.getPassword().equals(password)) {
-            throw new BizException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
+            throw new BizException(ResultCode.USER_PASSWORD_ERROR);
         }
         if (admin.getStatus() != 1) {
-            throw new BizException(ResultCode.ACCOUNT_DISABLED);
+            throw new BizException(ResultCode.USER_DISABLED);
         }
         Map<String, Object> result = new HashMap<>();
         result.put("id", admin.getId());
