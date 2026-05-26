@@ -45,4 +45,19 @@ public class FavoriteController {
             @RequestParam(defaultValue = "10") int size) {
         return R.ok(favoriteService.getUserFavorites(userId, page, size));
     }
+
+    @GetMapping("/list")
+    public R<PageResult<Question>> getMyFavorites(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Long userId = UserContext.getRequiredUserId();
+        return R.ok(favoriteService.getUserFavorites(userId, page, size));
+    }
+
+    @GetMapping("/check/{questionId}")
+    public R<Map<String, Object>> checkFavorited(@PathVariable Long questionId) {
+        Long userId = UserContext.getUserId();
+        boolean isFavorited = userId != null && favoriteService.isFavorited(userId, questionId);
+        return R.ok(Map.of("isFavorited", isFavorited));
+    }
 }
