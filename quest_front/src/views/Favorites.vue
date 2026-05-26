@@ -84,7 +84,7 @@ const fetchFavorites = async () => {
   loading.value = true
   try {
     const res = await getFavorites({ page: page.value, size: pageSize.value })
-    favorites.value = res.data.list || []
+    favorites.value = res.data.records || res.data.list || []
     total.value = res.data.total || 0
   } catch (error) {
     console.error('获取收藏列表失败:', error)
