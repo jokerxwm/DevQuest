@@ -5,13 +5,16 @@ export function getAnswers(questionId, params) {
 }
 
 export function createAnswer(questionId, data) {
-  return request.post(`/answers/${questionId}`, data)
+  return request.post('/answers', {
+    ...data,
+    questionId
+  })
 }
 
 export function acceptAnswer(questionId, answerId) {
-  return request.post(`/answers/${questionId}/${answerId}/accept`)
+  return request.post(`/answers/${answerId}/accept/${questionId}`)
 }
 
-export function deleteAnswer(questionId, answerId) {
-  return request.delete(`/answers/${questionId}/${answerId}`)
+export function deleteAnswer(answerId) {
+  return request.delete(`/answers/${answerId}`)
 }

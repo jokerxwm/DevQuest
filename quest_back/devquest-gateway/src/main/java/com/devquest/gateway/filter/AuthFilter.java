@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -27,11 +28,17 @@ public class AuthFilter implements GlobalFilter, Ordered {
             "/api/stats"
     );
 
+    private static final List<String> PUBLIC_GET_PREFIXES = Arrays.asList(
+            "/api/questions/",
+            "/api/answers/question/",
+            "/api/comments"
+    );
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        if (isWhiteListed(path)) {
+        if (isWhiteListed(path) || isPublicGet(path, exchange.getRequest().getMethod())) {
             return chain.filter(exchange);
         }
 
@@ -60,6 +67,11 @@ public class AuthFilter implements GlobalFilter, Ordered {
 
     private boolean isWhiteListed(String path) {
         return WHITE_LIST.stream().anyMatch(path::startsWith);
+    }
+
+    private boolean isPublicGet(String path, HttpMethod method) {
+        return HttpMethod.GET.equals(method)
+                && PUBLIC_GET_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
     @Override

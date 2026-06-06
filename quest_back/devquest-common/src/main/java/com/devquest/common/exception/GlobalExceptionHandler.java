@@ -1,5 +1,6 @@
 package com.devquest.common.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
 import com.devquest.common.result.R;
 import com.devquest.common.result.ResultCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,13 @@ public class GlobalExceptionHandler {
     public R<Void> handleBizException(BizException e, HttpServletRequest request) {
         log.warn("业务异常: {} - URI: {}", e.getMessage(), request.getRequestURI());
         return R.fail(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(NotLoginException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public R<Void> handleNotLoginException(NotLoginException e, HttpServletRequest request) {
+        log.warn("Not logged in: {} - URI: {}", e.getMessage(), request.getRequestURI());
+        return R.fail(ResultCode.UNAUTHORIZED);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
