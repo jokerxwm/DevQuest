@@ -1,6 +1,5 @@
 package com.devquest.user.service.impl;
 
-import cn.dev33.satoken.stp.SpConst;
 import cn.hutool.crypto.digest.BCrypt;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -20,9 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,7 +75,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public Map<String, Object> login(LoginDTO dto) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getEmail, dto.getEmail());
+        wrapper.eq(User::getEmail, dto.getEmail())
+                .or()
+                .eq(User::getUsername, dto.getEmail());
         User user = userMapper.selectOne(wrapper);
 
         if (user == null) {
@@ -201,5 +205,49 @@ public class UserServiceImpl implements UserService {
         LambdaQueryWrapper<UserFollow> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserFollow::getFollowerId, userId);
         return userFollowMapper.selectCount(wrapper);
+    }
+
+    @Override
+    public List<User> getFollowers(Long userId, int page, int size) {
+        LambdaQueryWrapper<UserFollow> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserFollow::getFollowingId, userId)
+                .orderByDesc(UserFollow::getCreatedAt);
+        List<UserFollow> follows = userFollowMapper.selectList(wrapper);
+        if (follows.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Long> userIds = follows.stream()
+                .skip((long) (page - 1) * size)
+                .limit(size)
+                .map(UserFollow::getFollowerId)
+                .collect(Collectors.toList());
+        if (userIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<User> users = userMapper.selectBatchIds(userIds);
+        users.forEach(u -> u.setPassword(null));
+        return users;
+    }
+
+    @Override
+    public List<User> getFollowing(Long userId, int page, int size) {
+        LambdaQueryWrapper<UserFollow> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserFollow::getFollowerId, userId)
+                .orderByDesc(UserFollow::getCreatedAt);
+        List<UserFollow> follows = userFollowMapper.selectList(wrapper);
+        if (follows.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Long> userIds = follows.stream()
+                .skip((long) (page - 1) * size)
+                .limit(size)
+                .map(UserFollow::getFollowingId)
+                .collect(Collectors.toList());
+        if (userIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<User> users = userMapper.selectBatchIds(userIds);
+        users.forEach(u -> u.setPassword(null));
+        return users;
     }
 }

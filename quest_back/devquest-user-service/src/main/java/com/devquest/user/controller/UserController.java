@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -46,6 +47,42 @@ public class UserController {
         Long currentUserId = UserContext.getRequiredUserId();
         userService.unfollowUser(currentUserId, userId);
         return R.ok();
+    }
+
+    @GetMapping("/{userId}/stats")
+    public R<Map<String, Object>> getUserStats(@PathVariable Long userId) {
+        User user = userService.getUserInfo(userId);
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("questionCount", user.getQuestionCount());
+        stats.put("answerCount", user.getAnswerCount());
+        stats.put("followers", userService.getFollowerCount(userId));
+        return R.ok(stats);
+    }
+
+    @GetMapping("/{userId}/followers")
+    public R<Map<String, Object>> getFollowers(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<User> followers = userService.getFollowers(userId, page, size);
+        long total = userService.getFollowerCount(userId);
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", followers);
+        result.put("total", total);
+        return R.ok(result);
+    }
+
+    @GetMapping("/{userId}/following")
+    public R<Map<String, Object>> getFollowing(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<User> following = userService.getFollowing(userId, page, size);
+        long total = userService.getFollowingCount(userId);
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", following);
+        result.put("total", total);
+        return R.ok(result);
     }
 
     @GetMapping("/{userId}/follow-status")

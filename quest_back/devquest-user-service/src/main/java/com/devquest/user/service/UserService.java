@@ -4,6 +4,7 @@ import com.devquest.common.dto.LoginDTO;
 import com.devquest.common.dto.RegisterDTO;
 import com.devquest.user.entity.User;
 
+import java.util.List;
 import java.util.Map;
 
 public interface UserService {
@@ -29,4 +30,8 @@ public interface UserService {
     long getFollowerCount(Long userId);
 
     long getFollowingCount(Long userId);
+
+    List<User> getFollowers(Long userId, int page, int size);
+
+    List<User> getFollowing(Long userId, int page, int size);
 }
