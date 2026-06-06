@@ -25,7 +25,7 @@ export function uploadAvatar(file) {
 }
 
 export function getUserAnswers(userId, params) {
-  return request.get(`/users/${userId}/answers`, { params })
+  return request.get(`/answers/user/${userId}`, { params })
 }
 
 export function getFollowers(userId, params) {

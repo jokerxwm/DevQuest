@@ -25,6 +25,7 @@
         <module>devquest-question-service</module>
         <module>devquest-ai-service</module>
         <module>devquest-notification-service</module>
+        <module>devquest-admin-service</module>
     </modules>
 
     <properties>

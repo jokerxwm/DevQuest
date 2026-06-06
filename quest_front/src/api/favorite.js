@@ -13,5 +13,5 @@ export function getFavorites(params) {
 }
 
 export function isFavorited(questionId) {
-  return request.get(`/favorites/check/${questionId}`)
+  return request.get(`/favorites/${questionId}/status`)
 }

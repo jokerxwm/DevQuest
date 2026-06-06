@@ -22,7 +22,7 @@ spring:
         - id: question-service
           uri: lb://devquest-question-service
           predicates:
-            - Path=/api/questions/**,/api/answers/**,/api/comments/**,/api/votes/**,/api/favorites/**,/api/tags/**,/api/drafts/**
+            - Path=/api/questions/**,/api/answers/**,/api/comments/**,/api/votes/**,/api/favorites/**,/api/drafts/**,/api/search/**,/api/stats,/api/tags/**
         - id: ai-service
           uri: lb://devquest-ai-service
           predicates:

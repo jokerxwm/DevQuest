@@ -4,12 +4,12 @@ import router from '@/router'
 
 const request = axios.create({
   baseURL: '/api',
-  timeout: 30000
+  timeout: 15000
 })
 
 request.interceptors.request.use(
   config => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('admin_token')
     if (token) {
       config.headers['Authorization'] = token
     }
@@ -26,7 +26,7 @@ request.interceptors.response.use(
     if (res.code !== 200) {
       ElMessage.error(res.msg || '请求失败')
       if (res.code === 401) {
-        localStorage.removeItem('token')
+        localStorage.removeItem('admin_token')
         router.push('/login')
       }
       return Promise.reject(new Error(res.msg || '请求失败'))

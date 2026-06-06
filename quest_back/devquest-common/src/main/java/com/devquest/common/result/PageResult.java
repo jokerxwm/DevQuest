@@ -1,5 +1,6 @@
 package com.devquest.common.result;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -8,6 +9,7 @@ import java.util.List;
 @Data
 public class PageResult<T> implements Serializable {
 
+    @JsonProperty("list")
     private List<T> records;
     private long total;
     private long page;

@@ -1,5 +1,6 @@
 package com.devquest.admin.service;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.devquest.admin.entity.Admin;
 import com.devquest.admin.mapper.AdminMapper;
@@ -27,11 +28,13 @@ public class AdminAuthService {
         if (admin.getStatus() != 1) {
             throw new BizException(ResultCode.USER_DISABLED);
         }
+        StpUtil.login(admin.getId());
         Map<String, Object> result = new HashMap<>();
         result.put("id", admin.getId());
         result.put("username", admin.getUsername());
         result.put("nickname", admin.getNickname());
         result.put("role", admin.getRole());
+        result.put("token", StpUtil.getTokenValue());
         return result;
     }
 }

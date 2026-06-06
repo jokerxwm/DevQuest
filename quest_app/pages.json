@@ -1,17 +1,85 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+	"pages": [
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "uni-app"
+				"navigationBarTitleText": "DevQuest",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/register/register",
+			"style": {
+				"navigationBarTitleText": "注册"
+			}
+		},
+		{
+			"path": "pages/question/detail",
+			"style": {
+				"navigationBarTitleText": "问题详情"
+			}
+		},
+		{
+			"path": "pages/ask/ask",
+			"style": {
+				"navigationBarTitleText": "提问"
+			}
+		},
+		{
+			"path": "pages/profile/profile",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		},
+		{
+			"path": "pages/notifications/notifications",
+			"style": {
+				"navigationBarTitleText": "消息通知"
 			}
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app",
-		"navigationBarBackgroundColor": "#F8F8F8",
-		"backgroundColor": "#F8F8F8"
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "DevQuest",
+		"navigationBarBackgroundColor": "#4A90D9",
+		"backgroundColor": "#F5F7FA"
 	},
-	"uniIdRouter": {}
+	"tabBar": {
+		"color": "#999",
+		"selectedColor": "#4A90D9",
+		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/tab-home.png",
+				"selectedIconPath": "static/tab-home-active.png"
+			},
+			{
+				"pagePath": "pages/ask/ask",
+				"text": "提问",
+				"iconPath": "static/tab-ask.png",
+				"selectedIconPath": "static/tab-ask-active.png"
+			},
+			{
+				"pagePath": "pages/notifications/notifications",
+				"text": "消息",
+				"iconPath": "static/tab-msg.png",
+				"selectedIconPath": "static/tab-msg-active.png"
+			},
+			{
+				"pagePath": "pages/profile/profile",
+				"text": "我的",
+				"iconPath": "static/tab-user.png",
+				"selectedIconPath": "static/tab-user-active.png"
+			}
+		]
+	}
 }
