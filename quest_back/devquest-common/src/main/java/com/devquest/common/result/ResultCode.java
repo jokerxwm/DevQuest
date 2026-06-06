@@ -26,6 +26,9 @@ public enum ResultCode {
     ALREADY_VOTED(2003, "已经投过票了"),
     ALREADY_FAVORITED(2004, "已经收藏过了"),
 
+    DRAFT_NOT_FOUND(2005, "草稿不存在"),
+    TAG_NOT_FOUND(2006, "标签不存在"),
+
     AI_SERVICE_ERROR(3001, "AI服务异常"),
     AI_RATE_LIMIT(3002, "AI请求过于频繁"),
 

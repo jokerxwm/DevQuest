@@ -19,9 +19,12 @@ public class AuthFilter implements GlobalFilter, Ordered {
     private static final List<String> WHITE_LIST = Arrays.asList(
             "/api/auth/login",
             "/api/auth/register",
+            "/api/admin/auth/login",
             "/api/questions/list",
             "/api/questions/hot",
-            "/api/tags"
+            "/api/tags",
+            "/api/admin/dashboard/stats",
+            "/api/stats"
     );
 
     @Override
