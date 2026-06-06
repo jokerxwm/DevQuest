@@ -46,7 +46,7 @@ const handleLogin = async () => {
   loading.value = true
   try {
     const res = await login(form)
-    localStorage.setItem('admin_token', res.data.id + '_' + res.data.username)
+    localStorage.setItem('admin_token', res.data.token)
     localStorage.setItem('admin_info', JSON.stringify(res.data))
     ElMessage.success('登录成功')
     router.push('/dashboard')

@@ -13,5 +13,12 @@
 </script>
 
 <style>
-	/*每个页面公共css */
+	page {
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+		background: #F5F7FA;
+		color: #333333;
+		font-size: 28rpx;
+		line-height: 1.6;
+		-webkit-font-smoothing: antialiased;
+	}
 </style>

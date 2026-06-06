@@ -1,56 +1,57 @@
 <template>
-  <div class="favorites container">
-    <div class="card">
-      <div class="page-header">
-        <h2>我的收藏</h2>
+  <div class="fav-page">
+    <section class="fav-hero">
+      <div class="fav-hero-inner">
+        <span class="section-eyebrow">My Collection</span>
+        <h1 class="fav-title">我的收藏</h1>
       </div>
+    </section>
 
-      <div v-loading="loading">
-        <div v-for="item in favorites" :key="item.id" class="favorite-item" @click="router.push(`/questions/${item.questionId}`)">
-          <div class="question-stats">
-            <div class="stat">
-              <span class="stat-value">{{ item.voteCount || 0 }}</span>
-              <span class="stat-label">投票</span>
+    <section class="fav-body">
+      <div class="fav-container">
+        <div class="card-lux">
+          <div v-loading="loading" class="fav-list">
+            <div v-for="item in favorites" :key="item.id" class="fav-card" @click="router.push(`/questions/${item.questionId}`)">
+              <div class="fav-stats">
+                <div class="fs-item">
+                  <span class="fs-val">{{ item.voteCount || 0 }}</span>
+                  <span class="fs-lbl">投票</span>
+                </div>
+                <div class="fs-item" :class="{ active: item.answerCount > 0 }">
+                  <span class="fs-val">{{ item.answerCount || 0 }}</span>
+                  <span class="fs-lbl">回答</span>
+                </div>
+              </div>
+              <div class="fav-body-content">
+                <h3 class="fav-q-title">{{ item.title }}</h3>
+                <p class="fav-excerpt">{{ item.content?.substring(0, 140) }}...</p>
+                <div class="fav-meta">
+                  <div class="fav-tags">
+                    <span v-for="tag in (item.tags || [])" :key="tag.id" class="fav-tag">{{ tag.name }}</span>
+                  </div>
+                  <div class="fav-info">
+                    <span class="fi-time">收藏于 {{ formatTime(item.createdAt) }}</span>
+                    <button class="fi-remove" @click.stop="handleRemoveFavorite(item.questionId)">取消收藏</button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="stat" :class="{ 'stat-active': item.answerCount > 0 }">
-              <span class="stat-value">{{ item.answerCount || 0 }}</span>
-              <span class="stat-label">回答</span>
+
+            <div v-if="!loading && favorites.length === 0" class="empty-box">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              <p>暂无收藏</p>
+              <button class="btn-caramel" @click="router.push('/questions')">去浏览问题</button>
             </div>
           </div>
-          <div class="question-content">
-            <h3 class="question-title">{{ item.title }}</h3>
-            <p class="question-summary">{{ item.content?.substring(0, 150) }}...</p>
-            <div class="question-meta">
-              <div class="tags">
-                <el-tag v-for="tag in item.tags" :key="tag.id" size="small">{{ tag.name }}</el-tag>
-              </div>
-              <div class="meta-right">
-                <span class="time">收藏于 {{ formatTime(item.createdAt) }}</span>
-                <el-button text type="danger" size="small" @click.stop="handleRemoveFavorite(item.questionId)">
-                  取消收藏
-                </el-button>
-              </div>
-            </div>
+
+          <div v-if="total > 0" class="pagination">
+            <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="prev, pager, next" @current-change="fetchFavorites" />
           </div>
         </div>
       </div>
-
-      <div v-if="!loading && favorites.length === 0" class="empty-state">
-        <el-empty description="暂无收藏">
-          <el-button type="primary" @click="router.push('/questions')">去浏览问题</el-button>
-        </el-empty>
-      </div>
-
-      <div v-if="total > 0" class="pagination">
-        <el-pagination
-          v-model:current-page="page"
-          :page-size="pageSize"
-          :total="total"
-          layout="prev, pager, next"
-          @current-change="fetchFavorites"
-        />
-      </div>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -61,7 +62,6 @@ import { getFavorites, removeFavorite } from '@/api/favorite'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
-
 const favorites = ref([])
 const loading = ref(false)
 const page = ref(1)
@@ -86,147 +86,69 @@ const fetchFavorites = async () => {
     const res = await getFavorites({ page: page.value, size: pageSize.value })
     favorites.value = res.data.records || res.data.list || []
     total.value = res.data.total || 0
-  } catch (error) {
-    console.error('获取收藏列表失败:', error)
-  } finally {
-    loading.value = false
-  }
+  } catch (error) { console.error(error) }
+  finally { loading.value = false }
 }
 
 const handleRemoveFavorite = async (questionId) => {
   try {
-    await ElMessageBox.confirm('确定要取消收藏该问题吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm('确定要取消收藏该问题吗？', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' })
     await removeFavorite(questionId)
     ElMessage.success('已取消收藏')
     fetchFavorites()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('取消收藏失败:', error)
-    }
-  }
+  } catch (error) { if (error !== 'cancel') console.error(error) }
 }
 
-onMounted(() => {
-  fetchFavorites()
-})
+onMounted(() => { fetchFavorites() })
 </script>
 
 <style scoped>
-.favorites {
-  padding: 24px 0;
-  max-width: 900px;
-}
+.fav-page { overflow: hidden; }
+.fav-hero { background: var(--cream); padding: 100px 0 40px; text-align: center; border-bottom: 1px solid var(--border-light); }
+.fav-hero-inner { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+.section-eyebrow { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--caramel); font-weight: 500; margin-bottom: 8px; }
+.fav-title { font-family: 'Noto Serif SC', 'Playfair Display', serif; font-size: 2rem; font-weight: 400; color: var(--forest); }
+.fav-body { padding: 48px 0 100px; }
+.fav-container { max-width: 900px; margin: 0 auto; padding: 0 2rem; }
+.card-lux { background: #fff; border: 1px solid var(--forest-08); border-radius: 20px; padding: 32px; }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #eee;
-}
+.fav-list { display: flex; flex-direction: column; gap: 14px; }
 
-.page-header h2 {
-  font-size: 24px;
+.fav-card {
+  display: flex; gap: 20px; padding: 20px; border: 1px solid var(--forest-08); border-radius: 16px;
+  cursor: pointer; transition: all 0.3s;
 }
+.fav-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26, 46, 38, 0.06); }
 
-.favorite-item {
-  display: flex;
-  gap: 20px;
-  padding: 16px 0;
-  border-bottom: 1px solid #f5f5f5;
-  cursor: pointer;
-  transition: background 0.3s;
-}
+.fav-stats { display: flex; flex-direction: column; gap: 6px; min-width: 56px; }
+.fs-item { text-align: center; padding: 6px 8px; border-radius: 10px; background: var(--cream-dark); }
+.fs-item.active { background: rgba(184, 138, 89, 0.1); }
+.fs-val { display: block; font-family: 'Noto Serif SC', 'Playfair Display', serif; font-size: 1rem; font-weight: 500; color: var(--forest); }
+.fs-lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--forest-40); }
 
-.favorite-item:hover {
-  background: #fafafa;
-}
+.fav-body-content { flex: 1; min-width: 0; }
+.fav-q-title { font-family: 'Noto Serif SC', 'Playfair Display', serif; font-size: 1rem; color: var(--forest); margin-bottom: 6px; transition: color 0.3s; }
+.fav-card:hover .fav-q-title { color: var(--caramel); }
+.fav-excerpt { font-size: 0.82rem; color: var(--forest-60); line-height: 1.7; margin-bottom: 12px; }
+.fav-meta { display: flex; justify-content: space-between; align-items: center; }
+.fav-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.fav-tag { display: inline-block; padding: 3px 10px; background: var(--cream); border-radius: 999px; font-size: 0.7rem; color: var(--forest-80); font-weight: 500; }
+.fav-info { display: flex; align-items: center; gap: 12px; }
+.fi-time { font-size: 0.72rem; color: var(--forest-40); }
+.fi-remove { background: none; border: none; font-size: 0.72rem; color: var(--caramel); cursor: pointer; font-weight: 500; transition: color 0.2s; }
+.fi-remove:hover { color: #e74c3c; }
 
-.question-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 60px;
-}
+.empty-box { text-align: center; padding: 48px 0; }
+.empty-icon { color: var(--forest-20); margin-bottom: 12px; }
+.empty-box p { font-size: 0.9rem; color: var(--forest-40); margin-bottom: 16px; }
+.btn-caramel { background: var(--caramel); color: #fff; border: none; padding: 10px 24px; border-radius: 999px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: background 0.3s; }
+.btn-caramel:hover { background: var(--caramel-light); }
 
-.stat {
-  text-align: center;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: #f5f5f5;
-}
+.pagination { margin-top: 24px; display: flex; justify-content: center; }
 
-.stat-active {
-  background: #e6f7ff;
-  border: 1px solid #91d5ff;
-}
-
-.stat-value {
-  display: block;
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #999;
-}
-
-.question-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.question-title {
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-.question-summary {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-.question-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tags {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.meta-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.time {
-  font-size: 12px;
-  color: #999;
-}
-
-.empty-state {
-  padding: 40px;
-}
-
-.pagination {
-  margin-top: 24px;
-  display: flex;
-  justify-content: center;
+@media (max-width: 640px) {
+  .fav-card { flex-direction: column; }
+  .fav-stats { flex-direction: row; }
+  .fav-meta { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 </style>
